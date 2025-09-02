@@ -27,6 +27,21 @@
   - **Contenu** : Données médicales anonymisées pour la migration
   - **Taille** : Acceptable pour Git (<100MB recommandé)
 
+#### 4. Installation MongoDB locale via Docker
+- Docker Desktop installé et opérationnel
+- Image: mongo:5.0
+- Port exposé: 27017
+- Volume persistant: mongodb_data monté sur /data/db
+- Variables d'environnement: MONGO_INITDB_ROOT_USERNAME=admin, MONGO_INITDB_ROOT_PASSWORD=secure_password
+- Conteneur: nom "mongo", politique de redémarrage "unless-stopped"
+
+Vérifications effectuées
+- docker ps: conteneur "mongo" en cours d'exécution
+- docker logs --tail 20 mongo: démarrage sans erreurs bloquantes
+- Shell: "use healthcare_db; db.stats();" → changement de contexte OK
+- "db.adminCommand({ listDatabases: 1 })": admin, config, local uniquement → normal tant qu'aucune collection n'est créée
+- Persistance: arrêt/redémarrage (docker stop/start mongo) → OK
+
 ### Configuration technique
 - **Git** : Repository local configuré avec remote GitHub
 - **Structure** : Dossiers exclus via .gitignore pour maintenir la propreté du repo
