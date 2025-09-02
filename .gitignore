@@ -5,6 +5,7 @@ cours_openclassroom_&_sources_externes/
 
 # Fichiers temporaires et caches
 *.txt
+!requirements.txt
 __pycache__/
 *.pyc
 *.pyo

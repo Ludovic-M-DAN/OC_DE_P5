@@ -42,6 +42,11 @@ Vérifications effectuées
 - "db.adminCommand({ listDatabases: 1 })": admin, config, local uniquement → normal tant qu'aucune collection n'est créée
 - Persistance: arrêt/redémarrage (docker stop/start mongo) → OK
 
+#### 5. Dépendances Python minimales (requirements.txt)
+- Création de `requirements.txt` au stade actuel du projet
+- Contenu minimal: `pymongo==4.7.2`
+- Raison: se limiter aux besoins immédiats de l’étape 1 (connexion MongoDB)
+
 ### Configuration technique
 - **Git** : Repository local configuré avec remote GitHub
 - **Structure** : Dossiers exclus via .gitignore pour maintenir la propreté du repo

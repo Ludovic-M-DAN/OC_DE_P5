@@ -35,12 +35,20 @@ docker exec -it mongo mongosh -u admin -p secure_password --authenticationDataba
 ```
 - Si la commande ne marche pas, ouvrez Docker Desktop, attendez qu’il soit “running”, puis réessayez.
 
+## Dépendances Python (étape actuelle)
+- requirements.txt minimal: 
+  - pymongo==4.7.2
+
+Installer les dépendances:
+```bash
+pip install -r requirements.txt
+```
+
 ## Portée du dépôt
 - Ce qui est versionné: scripts du projet, ce README, et le dataset dans `data/`.
 - Ce qui n’est pas versionné: documents personnels/ressources pédagogiques (voir `.gitignore`).
 
 ## Prochaines étapes (plan de travail)
-- Ajouter `requirements.txt` (pymongo, pandas, python-dotenv, pytest)
 - Écrire le script de migration CSV → MongoDB
 - Ajouter des tests d’intégrité (avant/après migration)
 
