@@ -47,6 +47,21 @@ Vérifications effectuées
 - Contenu minimal: `pymongo==4.7.2`
 - Raison: se limiter aux besoins immédiats de l’étape 1 (connexion MongoDB)
 
+#### 6. Structure du projet (actuelle)
+```
+.
+├── data/
+│   └── healthcare_dataset.csv
+├── src/
+│   └── __init__.py
+├── tests/
+├── requirements.txt
+├── README.md
+└── JOURNAL_DE_BORD.md
+```
+- `src/` est initialisé comme package Python.
+- `tests/` reste vide pour l’instant.
+
 ### Configuration technique
 - **Git** : Repository local configuré avec remote GitHub
 - **Structure** : Dossiers exclus via .gitignore pour maintenir la propreté du repo

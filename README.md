@@ -44,6 +44,20 @@ Installer les dépendances:
 pip install -r requirements.txt
 ```
 
+## Structure du projet (actuelle)
+```text
+.
+├── data/
+│   └── healthcare_dataset.csv
+├── src/
+│   └── __init__.py
+├── tests/
+├── requirements.txt
+├── README.md
+└── JOURNAL_DE_BORD.md
+```
+- Remarque: `tests/` est vide pour l’instant (les tests seront ajoutés plus tard).
+
 ## Portée du dépôt
 - Ce qui est versionné: scripts du projet, ce README, et le dataset dans `data/`.
 - Ce qui n’est pas versionné: documents personnels/ressources pédagogiques (voir `.gitignore`).
