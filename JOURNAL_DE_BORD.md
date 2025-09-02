@@ -80,4 +80,25 @@ Vérifications effectuées
 
 ---
 
+## Lexique & Annexes
+
+### Commandes utilisées (avec description)
+- `docker version`: vérifier l’installation et la version de Docker.
+- `docker pull mongo:5.0`: télécharger l’image officielle MongoDB 5.0.
+- `docker volume create mongodb_data`: créer un volume persistant pour les données MongoDB.
+- `docker run -d --name mongo -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=secure_password -v mongodb_data:/data/db --restart unless-stopped mongo:5.0`: lancer MongoDB en conteneur (port 27017, volume, identifiants root).
+- `docker ps`: lister les conteneurs en cours d’exécution.
+- `docker logs --tail 20 mongo`: afficher les derniers logs du conteneur `mongo`.
+- `docker exec -it mongo mongosh -u admin -p secure_password --authenticationDatabase admin --eval "db.adminCommand({ ping: 1 })"`: tester la réponse du serveur MongoDB.
+- `docker stop mongo` / `docker start mongo`: arrêter/redémarrer le conteneur tout en conservant les données (volume).
+- `docker exec -it mongo mongosh -u admin -p secure_password --authenticationDatabase admin --eval "db.adminCommand({ listDatabases: 1 })"`: lister les bases de données disponibles.
+
+### Termes techniques (définitions courtes)
+- Image Docker: modèle d’exécution immuable à partir duquel on crée des conteneurs.
+- Conteneur: instance d’une image qui exécute un processus isolé.
+- Volume Docker: stockage persistant monté dans un conteneur pour conserver les données.
+- Mapping de port (`-p hôte:conteneur`): expose un port du conteneur sur la machine hôte.
+- Identifiants root MongoDB: utilisateur/mot de passe administrateur créés au démarrage du conteneur.
+- BSON: format binaire de stockage de MongoDB, proche de JSON.
+
 
