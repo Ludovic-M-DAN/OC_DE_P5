@@ -1,0 +1,32 @@
+# Dossiers personnels à exclure
+attendus_du_projet/
+cours_openclassroom_&_sources_externes/
+.cursor/
+
+# Fichiers temporaires et caches
+*.txt
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Logs et données temporaires
+*.log
+logs/
+temp/
+tmp/
+
+# IDE et éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
