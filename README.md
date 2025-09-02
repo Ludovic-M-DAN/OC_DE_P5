@@ -1,18 +1,26 @@
 # OC_DE_P5
 
-## Prérequis
+Projet d'entraînement: migrer un fichier CSV vers MongoDB en local, étape par étape.
+
+## Prérequis (avant de commencer)
 - Docker Desktop (Windows/macOS) ou Docker CE (Linux)
+  - Pourquoi ? Pour lancer MongoDB rapidement sans l’installer en dur.
 - Git
 
-## Données
-- Dataset: `data/healthcare_dataset.csv` (fourni dans le dépôt)
+## Données utilisées
+- Fichier CSV: `data/healthcare_dataset.csv`
+  - Déjà présent dans le dépôt pour faciliter la reproduction.
 
-## Démarrage MongoDB (local, développement)
-Lancer une instance MongoDB locale avec Docker:
+## Démarrer MongoDB en local (avec Docker)
+Objectif: lancer une base MongoDB locale accessible sur le port 27017.
 
+1) Créer un volume pour conserver les données entre les redémarrages:
 ```bash
 docker volume create mongodb_data
+```
 
+2) Lancer le conteneur MongoDB (image officielle 5.0):
+```bash
 docker run -d --name mongo -p 27017:27017 \
   -e MONGO_INITDB_ROOT_USERNAME=admin \
   -e MONGO_INITDB_ROOT_PASSWORD=secure_password \
@@ -21,17 +29,19 @@ docker run -d --name mongo -p 27017:27017 \
   mongo:5.0
 ```
 
-Vérifier l’accessibilité:
-
+3) Vérifier que la base répond:
 ```bash
 docker exec -it mongo mongosh -u admin -p secure_password --authenticationDatabase admin --eval "db.adminCommand({ ping: 1 })"
 ```
+- Si la commande ne marche pas, ouvrez Docker Desktop, attendez qu’il soit “running”, puis réessayez.
 
 ## Portée du dépôt
-- Exclusions: `attendus_du_projet/`, `cours_openclassroom_&_sources_externes/`
-- Seules les sources du projet et le dataset sont versionnés
+- Ce qui est versionné: scripts du projet, ce README, et le dataset dans `data/`.
+- Ce qui n’est pas versionné: documents personnels/ressources pédagogiques (voir `.gitignore`).
 
-## Prochaines étapes
+## Prochaines étapes (plan de travail)
 - Ajouter `requirements.txt` (pymongo, pandas, python-dotenv, pytest)
-- Implémenter le script de migration CSV → MongoDB
-- Ajouter tests d’intégrité pré/post migration
+- Écrire le script de migration CSV → MongoDB
+- Ajouter des tests d’intégrité (avant/après migration)
+
+Ce README sera complété au fur et à mesure des étapes (exécution des scripts, schéma MongoDB, tests).
