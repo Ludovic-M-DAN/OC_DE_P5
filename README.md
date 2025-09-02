@@ -36,8 +36,9 @@ docker exec -it mongo mongosh -u admin -p secure_password --authenticationDataba
 - Si la commande ne marche pas, ouvrez Docker Desktop, attendez qu’il soit “running”, puis réessayez.
 
 ## Dépendances Python (étape actuelle)
-- requirements.txt minimal: 
+- requirements.txt : 
   - pymongo==4.7.2
+  - pandas==2.2.2
 
 Installer les dépendances:
 ```bash
@@ -78,13 +79,21 @@ pip list
 ├── data/
 │   └── healthcare_dataset.csv
 ├── src/
-│   └── __init__.py
+│   ├── __init__.py
+│   ├── migrate.py          # Script de migration CSV → MongoDB
+│   └── crud_demo.py        # Démonstration des opérations CRUD
 ├── tests/
+│   └── test_data_integrity.py  # Validation avant/après migration
 ├── requirements.txt
 ├── README.md
 └── JOURNAL_DE_BORD.md
 ```
-- Remarque: `tests/` est vide pour l’instant (les tests seront ajoutés plus tard).
+
+## Tests d'intégrité réalisés
+- Validation complète : **100% de réussite** (3/3 tests)
+- 55 500 lignes CSV = 55 500 documents MongoDB
+- Structure des données préservée (15 champs)
+- Migration validée sans perte de données
 
 ## Exécuter la migration CSV → MongoDB
 Objectif: charger le CSV dans la base locale.
