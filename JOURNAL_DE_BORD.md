@@ -62,6 +62,20 @@ Vérifications effectuées
 - `src/` est initialisé comme package Python.
 - `tests/` reste vide pour l’instant.
 
+#### 7. Script de migration CSV → MongoDB (minimal)
+- Fichier: `src/migrate.py`
+- Dépendances: PyMongo uniquement (requirements.txt)
+- Lecture CSV: `csv.DictReader` (stdlib), traitement par lots
+- Insertion: `insert_many(..., ordered=False)` dans `healthcare_db.patient_records`
+- Paramètres: variables d'environnement optionnelles (hôte, port, user, password, db, collection, CSV_PATH)
+- Sortie: logs de progression et résumé final (lignes lues, insérées, erreurs), code de sortie 0/1
+
+#### 8. Environnement virtuel Python
+- Création: `python -m venv venv`
+- Activation: `venv\Scripts\activate` (Windows)
+- Installation dépendances: `pip install --upgrade pip && pip install -r requirements.txt`
+- Raison: isolation des dépendances du projet, éviter les conflits système
+
 ### Configuration technique
 - **Git** : Repository local configuré avec remote GitHub
 - **Structure** : Dossiers exclus via .gitignore pour maintenir la propreté du repo

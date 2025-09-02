@@ -44,6 +44,34 @@ Installer les dépendances:
 pip install -r requirements.txt
 ```
 
+## Environnement virtuel Python (recommandé)
+Objectif: isoler les dépendances du projet.
+
+1) Créer l'environnement virtuel :
+```bash
+python -m venv venv
+```
+
+2) Activer l'environnement :
+```bash
+# Windows
+venv\Scripts\activate
+
+# Linux/Mac
+source venv/bin/activate
+```
+
+3) Installer les dépendances :
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+4) Vérifier l'installation :
+```bash
+pip list
+```
+
 ## Structure du projet (actuelle)
 ```text
 .
@@ -57,6 +85,32 @@ pip install -r requirements.txt
 └── JOURNAL_DE_BORD.md
 ```
 - Remarque: `tests/` est vide pour l’instant (les tests seront ajoutés plus tard).
+
+## Exécuter la migration CSV → MongoDB
+Objectif: charger le CSV dans la base locale.
+
+1) Lancer le script (par défaut, lit `data/healthcare_dataset.csv` et écrit dans `healthcare_db.patient_records`):
+```bash
+python src/migrate.py
+```
+
+2) Variables d’environnement optionnelles (si besoin d’adapter):
+```bash
+# Exemples
+set CSV_PATH=data\healthcare_dataset.csv
+set MONGO_HOST=localhost
+set MONGO_PORT=27017
+set MONGO_USER=admin
+set MONGO_PASSWORD=secure_password
+set MONGO_AUTH_DB=admin
+set MONGO_DB=healthcare_db
+set MONGO_COLLECTION=patient_records
+```
+
+3) Vérifier rapidement le nombre de documents:
+```bash
+docker exec -it mongo mongosh -u admin -p secure_password --authenticationDatabase admin --eval "db.getSiblingDB('healthcare_db').patient_records.countDocuments({})"
+```
 
 ## Portée du dépôt
 - Ce qui est versionné: scripts du projet, ce README, et le dataset dans `data/`.
