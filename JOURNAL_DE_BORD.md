@@ -76,6 +76,21 @@ Vérifications effectuées
 - Installation dépendances: `pip install --upgrade pip && pip install -r requirements.txt`
 - Raison: isolation des dépendances du projet, éviter les conflits système
 
+#### 9. Test de la migration CSV → MongoDB
+- Commande: `python src/migrate.py`
+- **Résultat**: Migration summary: rows_read=55500, inserted=55500, errors=0
+- Statut: ✅ SUCCÈS - 100% des lignes du CSV migrées sans erreur
+- Base cible: `healthcare_db.patient_records` (55 500 documents)
+
+#### 10. Démonstration des opérations CRUD
+- Fichier: `src/crud_demo.py`
+- Commande: `python src/crud_demo.py`
+- **CREATE**: 3 documents insérés (1 individuel + 2 en lot)
+- **READ**: 55 503 documents comptés, recherches et filtres appliqués
+- **UPDATE**: 3 documents modifiés (update_one + update_many)
+- **DELETE**: 3 documents supprimés, nettoyage complet
+- Statut: ✅ SUCCÈS - Toutes les opérations CRUD fonctionnelles
+
 ### Configuration technique
 - **Git** : Repository local configuré avec remote GitHub
 - **Structure** : Dossiers exclus via .gitignore pour maintenir la propreté du repo
