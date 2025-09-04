@@ -162,7 +162,26 @@ Vérifications effectuées
 - **Solution**: Lancement depuis racine avec `docker-compose -f docker/docker-compose.yml`
 - **Commande corrigée**: `docker-compose -f docker/docker-compose.yml up -d`
 - **Résultat**: ✅ Services démarrés, MongoDB healthy, migration OK
-- **Statut**: ✅ Orchestration Docker fonctionnelle 
+- **Statut**: ✅ Orchestration Docker fonctionnelle
+
+#### 20. Conversion en vrais tests pytest - Framework créé
+- **Nouveaux fichiers**: 
+  - `tests/test_migration_integrity.py` (13 tests automatisés)
+  - `tests/conftest.py` (configuration pytest)
+  - `pytest.ini` (configuration globale)
+- **Dependencies**: pytest==8.2.2, pytest-html==4.1.1 ajoutées à requirements.txt
+- **Installation**: `pip install pytest pytest-html` → OK
+- **Statut**: ✅ Framework pytest opérationnel
+
+#### 21. Premier test pytest - Erreurs détectées à corriger
+- **Commande**: `pytest tests/test_migration_integrity.py -v`
+- **Résultats**: 5 passed, 8 failed (38% réussite)
+- **Problèmes identifiés**:
+  1. **Colonnes CSV**: 'Diagnosis' manquante → vérifier noms exacts
+  2. **MongoDB vide**: 0 documents → migration pas lancée récemment
+  3. **pytest.warns**: Syntaxe incorrecte pour warnings
+- **Action**: Corriger les tests selon la structure réelle des données
+- **Statut**: 🔄 Tests à ajuster selon données réelles 
 
 ### Configuration technique
 - **Git** : Repository local configuré avec remote GitHub
@@ -202,5 +221,152 @@ Vérifications effectuées
 - Mapping de port (`-p hôte:conteneur`): expose un port du conteneur sur la machine hôte.
 - Identifiants root MongoDB: utilisateur/mot de passe administrateur créés au démarrage du conteneur.
 - BSON: format binaire de stockage de MongoDB, proche de JSON.
+
+---
+
+## **2025-09-04 - Conversion vers pytest et résolution des erreurs**
+
+### **Étape : Conversion du script de test en framework pytest**
+
+**Objectif :** Transformer le script `test_data_integrity.py` en vrais tests pytest automatisés.
+
+**Actions réalisées :**
+1. **Création du framework pytest :**
+   - `tests/test_migration_integrity.py` : 13 tests automatisés
+   - `tests/conftest.py` : fixtures partagées (csv_data, mongo_client)
+   - `pytest.ini` : configuration globale
+   - Mise à jour `requirements.txt` : ajout de `pytest==8.2.2` et `pytest-html==4.1.1`
+
+2. **Premier lancement des tests :**
+   - **Résultat :** 8 échecs / 13 tests
+   - **Tests réussis :** CSV file exists, CSV not empty, CSV age values, MongoDB connection, MongoDB data types
+   - **Tests échoués :** MongoDB collection exists, data count, document structure, migration completeness, query performance, indexes
+
+### **Diagnostic des erreurs identifiées :**
+
+**Erreur 1 : Nom de colonne incorrect**
+- **Problème :** Test cherchait 'Diagnosis' mais la vraie colonne est 'Medical Condition'
+- **Solution :** Correction dans `test_migration_integrity.py` ligne 41 et 99
+- **Commande de vérification :** `python -c "import pandas as pd; df = pd.read_csv('data/healthcare_dataset.csv'); print(df.columns.tolist())"`
+
+**Erreur 2 : Syntaxe pytest.warns incorrecte**
+- **Problème :** `pytest.warns(UserWarning, f"Doublons détectés: {duplicate_count}")` - TypeError
+- **Solution :** Remplacement par `warnings.warn(f"Doublons détectés: {duplicate_count}", UserWarning)`
+
+**Erreur 3 : MongoDB vide (problème principal)**
+- **Symptôme :** "Collection patient_records non trouvée", "Aucun document trouvé"
+- **Cause identifiée :** Le conteneur de migration ne trouve pas le fichier CSV
+- **Logs d'erreur :** `"CSV file not found: data/healthcare_dataset.csv"`
+
+### **Résolution du problème de montage Docker :**
+
+**Diagnostic approfondi :**
+- **Commande :** `docker-compose -f docker/docker-compose.yml logs migration`
+- **Résultat :** Erreur répétée "CSV file not found: data/healthcare_dataset.csv"
+- **État des conteneurs :** Seul `healthcare_mongo` était UP, `healthcare_migration` avait terminé
+
+**Problème identifié :**
+- **Configuration docker-compose.yml :** Volume monté `../data:/data:ro`
+- **Script migrate.py :** Cherchait `data/healthcare_dataset.csv` (chemin relatif)
+- **Dans le conteneur :** Le fichier est à `/data/healthcare_dataset.csv` (chemin absolu)
+
+**Solution implémentée :**
+- **Modification de `src/migrate.py` ligne 114-116 :**
+  ```python
+  # Chemin CSV : local "data/..." ou Docker "/data/..."
+  default_csv = "/data/healthcare_dataset.csv" if get_env("MONGO_HOST") == "mongo" else "data/healthcare_dataset.csv"
+  csv_path = argv[1] if len(argv) > 1 else get_env("CSV_PATH", default_csv)
+  ```
+- **Logique :** Détection automatique de l'environnement (local vs Docker) via la variable `MONGO_HOST`
+
+**Prochaine étape :** Relancer la migration avec `docker-compose -f docker/docker-compose.yml up --build migration`
+
+### **Amélioration des résultats :**
+- **Avant correction :** 8 échecs / 13 tests
+- **Après correction CSV :** 6 échecs / 13 tests (amélioration de 2 tests)
+- **Tests CSV :** Tous réussis ✅
+- **Tests MongoDB :** En attente de la migration corrigée
+
+### **Erreur lors du relancement de la migration :**
+
+**Problème identifié :**
+- **Erreur :** `TypeError: get_env() missing 1 required positional argument: 'default'`
+- **Cause :** Appel de `get_env("MONGO_HOST")` sans argument `default` obligatoire
+- **Ligne problématique :** `default_csv = "/data/healthcare_dataset.csv" if get_env("MONGO_HOST") == "mongo" else "data/healthcare_dataset.csv"`
+
+**Solution appliquée :**
+- **Correction :** `get_env("MONGO_HOST", "localhost")` avec valeur par défaut
+- **Logique :** 
+  - Dans Docker : `MONGO_HOST=mongo` → chemin `/data/healthcare_dataset.csv`
+  - En local : `MONGO_HOST` non défini → `"localhost"` par défaut → chemin `data/healthcare_dataset.csv`
+
+**Prochaine étape :** Relancer la migration avec la correction appliquée
+
+### **SUCCÈS DE LA MIGRATION DOCKER :**
+
+**Résultat final :**
+- ✅ **Migration réussie :** 55 500 lignes lues et insérées
+- ✅ **0 erreur** lors de l'insertion
+- ✅ **Code de sortie 0** (succès complet)
+- ✅ **Chemin CSV corrigé :** `/data/healthcare_dataset.csv` trouvé dans le conteneur
+- ✅ **Connexion MongoDB :** Établie avec succès vers le service `mongo`
+
+**Logs de migration :**
+```
+healthcare_migration  | 2025-09-04 14:31:20,262 - INFO - Starting CSV → MongoDB migration
+healthcare_migration  | 2025-09-04 14:31:20,262 - INFO - CSV file: /data/healthcare_dataset.csv
+healthcare_migration  | 2025-09-04 14:31:20,262 - INFO - Batch size: 1000
+healthcare_migration  | [... traitement par lots de 1000 documents ...]
+healthcare_migration  | 2025-09-04 14:31:23,503 - INFO - Migration summary: rows_read=55500, inserted=55500, errors=0
+healthcare_migration exited with code 0
+```
+
+**Prochaine étape :** Vérifier que tous les tests pytest passent maintenant que MongoDB contient les données
+
+### **SUCCÈS COMPLET DES TESTS PYTEST :**
+
+**Résultat final des tests :**
+- ✅ **13 tests PASSED** (100% de réussite)
+- ✅ **0 échec**
+- ⚠️ **1 warning** (informatif sur 534 doublons détectés dans le CSV - normal)
+
+**Tests réussis :**
+1. ✅ CSV file exists
+2. ✅ CSV not empty  
+3. ✅ CSV required columns
+4. ✅ CSV data quality
+5. ✅ CSV age values
+6. ✅ MongoDB connection
+7. ✅ MongoDB collection exists
+8. ✅ MongoDB data count
+9. ✅ MongoDB document structure
+10. ✅ MongoDB data types
+11. ✅ Migration completeness
+12. ✅ Query response time
+13. ✅ Indexes recommended
+
+**Problèmes résolus :**
+- ✅ Nom de colonne 'Diagnosis' → 'Medical Condition'
+- ✅ Syntaxe pytest.warns corrigée
+- ✅ Chemin CSV Docker : `/data/healthcare_dataset.csv`
+- ✅ Migration Docker : 55 500 documents insérés avec succès
+- ✅ Tous les tests MongoDB passent maintenant
+
+**Étape 1 et 2 du projet : COMPLÈTES ✅**
+
+### **Explication du warning sur les doublons :**
+
+**Warning observé :** `UserWarning: Doublons détectés: 534`
+
+**Pourquoi c'est normal et attendu :**
+- **534 doublons sur 55 500 lignes** = **0.96%** (taux très faible et acceptable)
+- **Dataset réaliste** : Les données médicales peuvent avoir des doublons légitimes :
+  - Même patient avec plusieurs consultations
+  - Même diagnostic pour différents patients  
+  - Données de test générées automatiquement
+- **Comportement du test** : Le warning est informatif seulement, pas bloquant
+- **Code responsable** : `warnings.warn(f"Doublons détectés: {duplicate_count}", UserWarning)` dans `test_csv_data_quality()`
+
+**Conclusion :** Ce warning est normal pour un dataset de santé publique et n'indique aucun problème avec la migration ou les tests.
 
 

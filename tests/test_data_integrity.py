@@ -1,9 +1,9 @@
 """
-Script de test d'intégrité des données - Étape 1 Migration MongoDB
-Validation avant/après migration CSV → MongoDB
+Script de test d'intégrité des données - VERSION LEGACY
+⚠️  REMPLACÉ PAR test_migration_integrity.py
 
-Ce script compare les données du fichier CSV source avec celles présentes 
-dans la base MongoDB après migration pour vérifier l'intégrité.
+Ce script reste pour compatibilité mais il est recommandé d'utiliser
+les nouveaux tests pytest dans test_migration_integrity.py
 """
 
 import pandas as pd

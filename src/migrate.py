@@ -111,7 +111,9 @@ def main(argv: List[str]) -> int:
     setup_logging()
 
     # Paramètres d'entrée (chemin CSV et taille de lot)
-    csv_path = argv[1] if len(argv) > 1 else get_env("CSV_PATH", os.path.join("data", "healthcare_dataset.csv"))
+    # Chemin CSV : local "data/..." ou Docker "/data/..."
+    default_csv = "/data/healthcare_dataset.csv" if get_env("MONGO_HOST", "localhost") == "mongo" else "data/healthcare_dataset.csv"
+    csv_path = argv[1] if len(argv) > 1 else get_env("CSV_PATH", default_csv)
     batch_size_str = get_env("MIGRATION_BATCH_SIZE", "1000")
     try:
         batch_size = max(1, int(batch_size_str))
