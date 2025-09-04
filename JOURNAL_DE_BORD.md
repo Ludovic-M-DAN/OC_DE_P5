@@ -139,7 +139,15 @@ Vérifications effectuées
 - **Durée**: 29.1s (téléchargement Python 3.9-slim + installation dépendances)
 - **Résultat**: Image `healthcare-migration` créée avec succès
 - **Statut**: ✅ Build Docker fonctionnel
-- **Prochaine étape**: Configuration .dockerignore et docker-compose.yml 
+
+#### 17. Configuration .dockerignore - Optimisation majeure
+- **Fichier**: `docker/.dockerignore` avec exclusions optimisées
+- **Exclusions**: venv/, .git/, __pycache__/, dossiers personnels, documentation
+- **Test d'optimisation**: Build re-exécuté après configuration
+- **Résultat**: **29.1s → 1.3s** (amélioration de 95% !)
+- **Cause**: Cache Docker + contexte minimal (162B vs plusieurs MB)
+- **Statut**: ✅ Optimisation Docker réussie
+- **Prochaine étape**: Création docker-compose.yml pour orchestration 
 
 ### Configuration technique
 - **Git** : Repository local configuré avec remote GitHub

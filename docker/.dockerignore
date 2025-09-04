@@ -1,0 +1,47 @@
+# Dossiers personnels à exclure
+attendus_du_projet/
+cours_openclassroom_&_sources_externes/
+.cursor/
+
+# Environnement virtuel Python
+venv/
+.venv/
+env/
+.env/
+
+# Fichiers Git
+.git/
+.gitignore
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Logs et fichiers temporaires
+*.log
+logs/
+temp/
+tmp/
+
+# IDE et éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation et tests (optionnel pour optimiser)
+*.md
+tests/
+
+# Docker lui-même
+Dockerfile
+docker-compose.yml
+.dockerignore
