@@ -124,7 +124,22 @@ Vérifications effectuées
   - `docker-compose.yml` : Orchestration des services
 - **Architecture planifiée**: Service MongoDB + Service Migration + Réseau nommé
 - **Statut**: ✅ Structure Docker organisée
-- **Prochaine étape**: Création du Dockerfile (Phase 2.2) 
+
+#### 15. Création du Dockerfile - Correction erreur de contexte
+- **Fichier**: `docker/Dockerfile` avec base Python 3.9-slim
+- **Erreur détectée**: Contexte de build dans `./docker/` mais fichiers à la racine
+- **Problème**: `COPY requirements.txt .` cherchait `docker/requirements.txt` (inexistant)
+- **Solution finale**: Utilisation de `docker build -f docker/Dockerfile -t healthcare-migration .`
+  - `-f docker/Dockerfile` : spécifie le Dockerfile
+  - `.` : contexte de build à la racine (accès requirements.txt et src/)
+  - Chemins standards dans le Dockerfile (sans `../`)
+
+#### 16. Test du build Docker - SUCCÈS
+- **Commande**: `docker build -f docker/Dockerfile -t healthcare-migration .`
+- **Durée**: 29.1s (téléchargement Python 3.9-slim + installation dépendances)
+- **Résultat**: Image `healthcare-migration` créée avec succès
+- **Statut**: ✅ Build Docker fonctionnel
+- **Prochaine étape**: Configuration .dockerignore et docker-compose.yml 
 
 ### Configuration technique
 - **Git** : Repository local configuré avec remote GitHub

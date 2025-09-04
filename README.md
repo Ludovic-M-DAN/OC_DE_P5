@@ -136,7 +136,8 @@ docker exec -it mongo mongosh -u admin -p secure_password --authenticationDataba
   - Tests d'intégrité validés (100% de réussite)
 - 🔄 **Étape 2** : Conteneurisation avec Docker (en cours)
   - Structure Docker créée
-  - Prochaine étape : Configuration des services
+  - Dockerfile fonctionnel (image `healthcare-migration` buildée)
+  - Prochaine étape : docker-compose.yml pour orchestration
 
 ## Prochaines étapes (plan de travail)
 - Finaliser la conteneurisation (Dockerfile + docker-compose.yml)
