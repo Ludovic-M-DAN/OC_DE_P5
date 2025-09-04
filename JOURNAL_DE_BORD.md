@@ -105,6 +105,27 @@ Vérifications effectuées
 - **Validation**: Migration validée, intégrité des données préservée
 - **Note**: 534 doublons détectés dans le CSV original (normal)
 
+---
+
+## ÉTAPE 2 - CONTENEURISATION AVEC DOCKER
+
+### Session 2 - Docker et Compose
+
+#### 13. Vérification environnement Docker 
+- **Docker version**: 28.3.3 (build 980b856)
+- **Docker Compose version**: v2.39.2-desktop.1
+- **Test hello-world**: Exécution réussie
+- **Statut**: ✅ Environnement Docker fonctionnel et prêt
+
+#### 14. Organisation structure containerisation
+- **Dossier créé**: `docker/` avec 3 fichiers
+  - `Dockerfile` : Image custom pour service migration
+  - `.dockerignore` : Exclusions pour le build Docker
+  - `docker-compose.yml` : Orchestration des services
+- **Architecture planifiée**: Service MongoDB + Service Migration + Réseau nommé
+- **Statut**: ✅ Structure Docker organisée
+- **Prochaine étape**: Création du Dockerfile (Phase 2.2) 
+
 ### Configuration technique
 - **Git** : Repository local configuré avec remote GitHub
 - **Structure** : Dossiers exclus via .gitignore pour maintenir la propreté du repo

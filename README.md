@@ -78,6 +78,10 @@ pip list
 .
 ├── data/
 │   └── healthcare_dataset.csv
+├── docker/                 # Fichiers de containerisation
+│   ├── Dockerfile          # Image service migration
+│   ├── .dockerignore       # Exclusions pour le build
+│   └── docker-compose.yml  # Orchestration des services
 ├── src/
 │   ├── __init__.py
 │   ├── migrate.py          # Script de migration CSV → MongoDB
@@ -125,8 +129,16 @@ docker exec -it mongo mongosh -u admin -p secure_password --authenticationDataba
 - Ce qui est versionné: scripts du projet, ce README, et le dataset dans `data/`.
 - Ce qui n’est pas versionné: documents personnels/ressources pédagogiques (voir `.gitignore`).
 
-## Prochaines étapes (plan de travail)
-- Écrire le script de migration CSV → MongoDB
-- Ajouter des tests d’intégrité (avant/après migration)
+## Étapes réalisées
+- ✅ **Étape 1** : Migration vers MongoDB
+  - Script de migration fonctionnel (55 500 enregistrements)
+  - Opérations CRUD démontrées
+  - Tests d'intégrité validés (100% de réussite)
+- 🔄 **Étape 2** : Conteneurisation avec Docker (en cours)
+  - Structure Docker créée
+  - Prochaine étape : Configuration des services
 
-Ce README sera complété au fur et à mesure des étapes (exécution des scripts, schéma MongoDB, tests).
+## Prochaines étapes (plan de travail)
+- Finaliser la conteneurisation (Dockerfile + docker-compose.yml)
+- Recherche AWS (étape 3)
+- Support de présentation (étape 4)
