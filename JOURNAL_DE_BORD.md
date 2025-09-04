@@ -147,7 +147,22 @@ Vérifications effectuées
 - **Résultat**: **29.1s → 1.3s** (amélioration de 95% !)
 - **Cause**: Cache Docker + contexte minimal (162B vs plusieurs MB)
 - **Statut**: ✅ Optimisation Docker réussie
-- **Prochaine étape**: Création docker-compose.yml pour orchestration 
+
+#### 18. Création docker-compose.yml - Orchestration complète
+- **Fichier**: `docker/docker-compose.yml` avec services MongoDB + Migration
+- **Services**: 
+  - `mongo`: Image officielle 5.0, port 27017, auth admin/secure_password
+  - `migration`: Build depuis Dockerfile, depends_on mongo (healthy), variables env
+- **Infrastructure**: Volume persistant mongodb_data, réseau healthcare_net
+- **Health check**: MongoDB ping pour synchronisation des services
+
+#### 19. Test orchestration - Erreur de contexte résolue
+- **Problème initial**: `CSV file not found: data/healthcare_dataset.csv`
+- **Cause**: Lancement depuis `docker/` → chemins relatifs incorrects
+- **Solution**: Lancement depuis racine avec `docker-compose -f docker/docker-compose.yml`
+- **Commande corrigée**: `docker-compose -f docker/docker-compose.yml up -d`
+- **Résultat**: ✅ Services démarrés, MongoDB healthy, migration OK
+- **Statut**: ✅ Orchestration Docker fonctionnelle 
 
 ### Configuration technique
 - **Git** : Repository local configuré avec remote GitHub

@@ -134,13 +134,30 @@ docker exec -it mongo mongosh -u admin -p secure_password --authenticationDataba
   - Script de migration fonctionnel (55 500 enregistrements)
   - Opérations CRUD démontrées
   - Tests d'intégrité validés (100% de réussite)
-- 🔄 **Étape 2** : Conteneurisation avec Docker (en cours)
+- ✅ **Étape 2** : Conteneurisation avec Docker (terminée)
   - Structure Docker créée et organisée (`docker/` dossier)
   - Dockerfile fonctionnel (image `healthcare-migration` optimisée)
   - .dockerignore configuré (build 29s → 1.3s, amélioration 95%)
-  - Prochaine étape : docker-compose.yml pour orchestration complète
+  - docker-compose.yml opérationnel (MongoDB + Migration orchestrés)
+  - Commande de lancement : `docker-compose -f docker/docker-compose.yml up -d`
+
+## Commandes Docker (Étape 2 terminée)
+
+**Lancement complet de l'environnement :**
+```bash
+# Démarrer MongoDB + Migration
+docker-compose -f docker/docker-compose.yml up -d
+
+# Vérifier les services
+docker-compose -f docker/docker-compose.yml ps
+
+# Voir les logs
+docker-compose -f docker/docker-compose.yml logs
+
+# Arrêter
+docker-compose -f docker/docker-compose.yml down
+```
 
 ## Prochaines étapes (plan de travail)
-- Finaliser la conteneurisation (Dockerfile + docker-compose.yml)
-- Recherche AWS (étape 3)
-- Support de présentation (étape 4)
+- 🔄 **Étape 3** : Recherche AWS (analyse comparative)
+- **Étape 4** : Support de présentation (slides soutenance)
