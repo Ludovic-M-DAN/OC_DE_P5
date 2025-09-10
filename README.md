@@ -19,7 +19,7 @@ Le dataset contient 55 500 enregistrements de données médicales patient qui so
 
 1. Cloner le repository :
 ```bash
-git clone <repository-url>
+git clone https://github.com/Ludovic-M-DAN/OC_DE_P5.git
 cd P5_OC_DE
 ```
 
@@ -54,7 +54,9 @@ docker-compose -f docker/docker-compose.yml up -d
 │   └── .dockerignore            # Exclusions du build
 ├── src/
 │   ├── migrate.py               # Script principal de migration
-│   └── crud_demo.py             # Démonstration des opérations CRUD
+│   ├── crud_demo.py             # Démonstration des opérations CRUD
+│   ├── setup_auth.py            # Configuration automatique des utilisateurs
+│   └── auth_demo.py             # Démonstration de l'authentification
 ├── tests/
 │   ├── test_migration_integrity.py  # Tests automatisés
 │   └── conftest.py              # Configuration des tests
@@ -70,16 +72,15 @@ Les données sont stockées dans MongoDB selon la structure suivante :
 ### Collection : `patient_records`
 
 Chaque document représente un enregistrement patient avec la structure :
-```javascript
+```json
 {
-  "patient_id": "P001",           // Identifiant unique du patient
-  "record_type": "consultation",  // Type d'enregistrement médical
-  "date_recorded": "2023-10-15",  // Date d'enregistrement
-  "age": "45",                    // Âge du patient
-  "name": "John Doe",             // Nom du patient
-  "medical_condition": "Hypertension",  // Condition médicale
-  "date_of_admission": "2023-10-15",    // Date d'admission
-  // ... autres champs du CSV
+  "patient_id": "P001",
+  "record_type": "consultation",
+  "date_recorded": "2023-10-15",
+  "age": "45",
+  "name": "John Doe",
+  "medical_condition": "Hypertension",
+  "date_of_admission": "2023-10-15"
 }
 ```
 
@@ -273,9 +274,40 @@ pytest tests/ --html=reports/test_results.html
 - `MONGO_HOST` : mongo
 - `MONGO_PORT` : 27017
 
-### Note sur l'authentification
+### Authentification et rôles utilisateurs
 
-Ce projet utilise l'authentification de base MongoDB avec un utilisateur administrateur. Pour un environnement de production, il est recommandé d'implémenter un système d'authentification plus avancé avec des rôles utilisateurs spécifiques selon les besoins métier.
+Le projet implémente un système d'authentification complet avec différents rôles utilisateurs :
+
+#### Rôles configurés automatiquement
+
+- **Admin** (`admin`) : Accès complet à toutes les bases et collections
+- **Migration** (`migration_user`) : Droits d'écriture sur `healthcare_db.patient_records`
+- **Lecture seule** (`readonly_user`) : Accès en lecture seule sur `healthcare_db`
+- **Soins** (`healthcare_user`) : Accès limité aux données non sensibles
+
+#### Configuration automatique
+
+Au démarrage de Docker Compose :
+1. Le service `setup_auth` crée automatiquement tous les utilisateurs et rôles
+2. Les mots de passe sont chiffrés selon les standards MongoDB (SCRAM-SHA-256)
+3. Le service `migration` utilise l'utilisateur `migration_user` pour la sécurité
+
+#### Scripts d'authentification
+
+```bash
+# Configuration des utilisateurs et rôles
+python src/setup_auth.py
+
+# Démonstration des différents niveaux d'accès
+python src/auth_demo.py
+```
+
+#### Justification des choix
+
+- **Principe de moindre privilège** : Chaque utilisateur n'a que les permissions nécessaires
+- **Séparation des responsabilités** : Rôles distincts pour migration vs consultation
+- **Chiffrement automatique** : MongoDB gère le hachage des mots de passe
+- **Conformité RGPD** : Contrôle d'accès aux données médicales sensibles
 
 ## Commandes Docker principales
 

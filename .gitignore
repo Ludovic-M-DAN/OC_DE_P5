@@ -7,12 +7,12 @@ aws_research.md
 Migration et sécurisation des enregistrements médicaux.pptm
 Presentation.pptx
 
-# Fichiers d'authentification (pas dans les attendus stricts du projet)
-src/auth_demo.py
-src/setup_auth.py
+# Fichiers d'authentification (nécessaires pour démontrer l'implémentation)
+# Ces fichiers sont requis pour montrer l'authentification fonctionnelle
+
+# Fichiers de documentation non essentiels pour l'évaluation
 docs/presentation_auth_slides.md
 docs/mentor_criteria_validation.md
-docs/database-schema.md
 
 # Fichiers temporaires et caches
 *.txt
