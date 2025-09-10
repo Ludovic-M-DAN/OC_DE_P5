@@ -1,25 +1,29 @@
 # OC_DE_P5
 
-Projet d'entraînement: migrer un fichier CSV vers MongoDB en local, étape par étape.
+Migration de données CSV vers MongoDB avec conteneurisation Docker.
 
-## Prérequis
+## Contexte du projet
+
+Ce projet implémente la migration automatisée d'un dataset médical au format CSV vers une base de données MongoDB. L'ensemble de la solution est conteneurisée avec Docker pour assurer la portabilité et la reproductibilité.
+
+Le dataset contient 55 500 enregistrements de données médicales patient qui sont migrés vers une collection MongoDB `patient_records` dans la base `healthcare_db`.
+
+## Installation
+
+### Prérequis
 - Docker Desktop (Windows/macOS) ou Docker CE (Linux)
 - Python 3.8+ avec pip
 - Git
 
-## Données utilisées
-- Fichier CSV: `data/healthcare_dataset.csv` (55 500 enregistrements de données médicales)
-  - Déjà présent dans le dépôt pour faciliter la reproduction
+### Étapes d'installation
 
-## Installation rapide
-
-1) **Cloner le projet :**
+1. Cloner le repository :
 ```bash
-git clone <repo-url>
+git clone <repository-url>
 cd P5_OC_DE
 ```
 
-2) **Créer l'environnement virtuel Python :**
+2. Créer l'environnement virtuel :
 ```bash
 python -m venv venv
 # Windows
@@ -28,389 +32,272 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-3) **Installer les dépendances :**
+3. Installer les dépendances :
 ```bash
 pip install -r requirements.txt
 ```
 
-4) **Lancer l'environnement complet avec Docker :**
+4. Lancer l'environnement Docker :
 ```bash
 docker-compose -f docker/docker-compose.yml up -d
 ```
 
-## Structure du projet
-```text
+## Architecture du projet
+
+```
 .
 ├── data/
-│   └── healthcare_dataset.csv          # Dataset source (55 500 enregistrements)
-├── docker/                             # Configuration Docker
-│   ├── Dockerfile                      # Image service migration
-│   ├── .dockerignore                   # Exclusions pour le build
-│   └── docker-compose.yml              # Orchestration MongoDB + Migration
+│   └── healthcare_dataset.csv    # Données source (55 500 enregistrements)
+├── docker/
+│   ├── docker-compose.yml        # Orchestration des services
+│   ├── Dockerfile               # Image du service de migration
+│   └── .dockerignore            # Exclusions du build
 ├── src/
-│   ├── __init__.py
-│   ├── migrate.py                      # Script de migration CSV → MongoDB
-│   └── crud_demo.py                    # Démonstration des opérations CRUD
+│   ├── migrate.py               # Script principal de migration
+│   └── crud_demo.py             # Démonstration des opérations CRUD
 ├── tests/
-│   ├── conftest.py                     # Configuration pytest
-│   ├── test_migration_integrity.py     # Tests automatisés (13 tests)
-│   └── test_data_integrity.py          # Script legacy (déprécié)
-├── requirements.txt                    # Dépendances Python
-├── pytest.ini                         # Configuration pytest
-├── README.md
-└── JOURNAL_DE_BORD.md                  # Journal de développement
+│   ├── test_migration_integrity.py  # Tests automatisés
+│   └── conftest.py              # Configuration des tests
+├── requirements.txt             # Dépendances Python
+└── pytest.ini                  # Configuration pytest
 ```
 
-## Tests automatisés
+## Schéma de base de données
 
-**Framework pytest implémenté :**
-- ✅ **13 tests PASSED** (100% de réussite)
-- ✅ Tests CSV : structure, qualité, colonnes requises
-- ✅ Tests MongoDB : connexion, collection, données, structure
-- ✅ Tests de performance : temps de réponse, index
-- ✅ Tests de complétude : migration complète vérifiée
+Les données sont stockées dans MongoDB selon la structure suivante :
 
-**Exécuter les tests :**
+### Base de données : `healthcare_db`
+### Collection : `patient_records`
+
+Chaque document représente un enregistrement patient avec la structure :
+```javascript
+{
+  "patient_id": "P001",           // Identifiant unique du patient
+  "record_type": "consultation",  // Type d'enregistrement médical
+  "date_recorded": "2023-10-15",  // Date d'enregistrement
+  "age": "45",                    // Âge du patient
+  "name": "John Doe",             // Nom du patient
+  "medical_condition": "Hypertension",  // Condition médicale
+  "date_of_admission": "2023-10-15",    // Date d'admission
+  // ... autres champs du CSV
+}
+```
+
+## Utilisation
+
+### Migration des données
+
+Le script principal migre automatiquement les données CSV vers MongoDB :
+
 ```bash
-# Tous les tests
+# Migration automatique via Docker
+docker-compose -f docker/docker-compose.yml up -d
+
+# Le service de migration s'exécute automatiquement
+# Vérification des logs
+docker-compose -f docker/docker-compose.yml logs migration
+```
+
+### Connexion à MongoDB
+
+```bash
+# Connexion à MongoDB via Docker
+docker exec -it healthcare_mongo mongosh -u admin -p secure_password --authenticationDatabase admin
+
+# Vérification des données migrées
+use healthcare_db
+db.patient_records.countDocuments({})
+db.patient_records.findOne()
+```
+
+### Opérations CRUD
+
+Le script `crud_demo.py` démontre les opérations de base :
+
+```bash
+# Exécution des opérations de démonstration
+python src/crud_demo.py
+```
+
+Ce script montre :
+- Création de nouveaux documents
+- Lecture et recherche de données
+- Mise à jour d'enregistrements existants
+- Suppression de documents
+
+## Logique de migration
+
+### Fonctionnement du script `migrate.py`
+
+Le script de migration suit cette logique :
+
+1. **Connexion à MongoDB**
+   - Utilise les variables d'environnement pour la connexion
+   - Supporte les environnements Docker et locaux
+
+2. **Lecture du CSV**
+   - Utilise la bibliothèque `csv` standard de Python
+   - Lecture par lots pour optimiser la mémoire
+   - Taille de lot configurable (défaut : 1000 lignes)
+
+3. **Validation et transformation**
+   - Vérification de la structure des données
+   - Conversion des types si nécessaire
+   - Gestion des valeurs manquantes
+
+4. **Insertion dans MongoDB**
+   - Utilise `insert_many()` avec `ordered=False`
+   - Traitement par lots pour les performances
+   - Gestion des erreurs partielles
+
+5. **Rapport final**
+   - Nombre total de lignes lues
+   - Nombre de documents insérés avec succès
+   - Nombre d'erreurs rencontrées
+
+### Gestion des environnements
+
+Le script détecte automatiquement l'environnement d'exécution :
+
+- **Environnement Docker** : Utilise `/data/healthcare_dataset.csv`
+- **Environnement local** : Utilise `data/healthcare_dataset.csv`
+
+Cette logique permet d'exécuter le même script dans les deux contextes sans modification.
+
+## Exécution locale
+
+### Préparation de l'environnement
+
+1. **Installer MongoDB localement** (si Docker n'est pas utilisé) :
+```bash
+# Sur Ubuntu/Debian
+sudo apt-get install mongodb
+
+# Sur macOS avec Homebrew
+brew install mongodb-community
+
+# Démarrer MongoDB
+sudo systemctl start mongodb  # Linux
+brew services start mongodb-community  # macOS
+```
+
+2. **Créer la base de données** :
+```bash
+# Connexion à MongoDB
+mongosh
+
+# Créer la base et l'utilisateur admin
+use healthcare_db
+db.createUser({
+  user: "admin",
+  pwd: "secure_password",
+  roles: ["readWrite", "dbAdmin"]
+})
+```
+
+### Exécution du script de migration
+
+```bash
+# Avec variables d'environnement
+export MONGO_HOST="localhost"
+export MONGO_PORT="27017"
+export MONGO_USER="admin"
+export MONGO_PASSWORD="secure_password"
+export MONGO_DB="healthcare_db"
+
+# Exécution du script
+python src/migrate.py
+```
+
+### Vérification des résultats
+
+```bash
+# Connexion à MongoDB
+mongosh -u admin -p secure_password --authenticationDatabase healthcare_db
+
+# Vérifications
+use healthcare_db
+db.patient_records.countDocuments({})
+db.patient_records.findOne()
+```
+
+## Choix techniques et justifications
+
+### Choix de MongoDB
+- **Justification** : Base de données NoSQL adaptée aux données médicales semi-structurées
+- **Avantages** : Flexibilité du schéma, performance sur les données volumineuses
+- **Alternative considérée** : SQL traditionnel (rejeté pour la rigidité du schéma)
+
+### Choix de Docker
+- **Justification** : Portabilité et reproductibilité de l'environnement
+- **Avantages** : Élimination des conflits de dépendances, déploiement simplifié
+- **Alternative considérée** : Installation native (rejetée pour les problèmes de compatibilité)
+
+### Choix de Python
+- **Justification** : Écosystème riche pour le traitement de données
+- **Avantages** : Pandas pour CSV, PyMongo pour MongoDB, tests avec pytest
+- **Version choisie** : Python 3.8+ pour la stabilité et les fonctionnalités modernes
+
+### Architecture de migration
+- **Traitement par lots** : Optimise l'utilisation mémoire pour les gros volumes
+- **Gestion d'erreurs** : `ordered=False` permet la poursuite malgré les erreurs partielles
+- **Variables d'environnement** : Flexibilité entre environnements Docker et locaux
+
+## Tests
+
+### Exécution des tests
+
+```bash
+# Tests complets
 pytest tests/test_migration_integrity.py -v
 
-# Avec rapport HTML
+# Rapport HTML
 pytest tests/ --html=reports/test_results.html
 ```
 
-## 🔐 Authentification et sécurité MongoDB
+### Couverture des tests
+- Structure et qualité des données CSV
+- Connexion et intégrité MongoDB
+- Performance des requêtes
+- Complétude de la migration
 
-### Architecture d'authentification
+## Configuration Docker
 
-Le système implémente une authentification par rôle utilisateur adaptée aux données médicales sensibles :
+### Services
+- **MongoDB** : Base de données principale (port 27017)
+- **Migration** : Service de migration des données
 
-- **Principe de moindre privilège** : Chaque utilisateur n'a que les permissions nécessaires
-- **Séparation des responsabilités** : Rôles distincts pour migration, analyse, et accès clinique
-- **Audit et traçabilité** : Logs d'accès pour toutes les opérations
+### Variables d'environnement
+- `MONGO_INITDB_ROOT_USERNAME` : admin
+- `MONGO_INITDB_ROOT_PASSWORD` : secure_password
+- `MONGO_HOST` : mongo
+- `MONGO_PORT` : 27017
 
-### Rôles utilisateurs configurés
+### Note sur l'authentification
 
-| Rôle | Utilisateur | Permissions | Usage |
-|------|-------------|-------------|-------|
-| **Admin** | `admin` | Accès complet | Configuration système |
-| **Migration** | `migration_user` | Lecture/Écriture | Migration des données CSV |
-| **ReadOnly** | `readonly_user` | Lecture seule | Analyses et rapports |
-| **Healthcare** | `healthcare_user` | Lecture limitée | Applications cliniques |
+Ce projet utilise l'authentification de base MongoDB avec un utilisateur administrateur. Pour un environnement de production, il est recommandé d'implémenter un système d'authentification plus avancé avec des rôles utilisateurs spécifiques selon les besoins métier.
 
-### Configuration automatique
+## Commandes Docker principales
 
-**Au démarrage Docker :**
 ```bash
-# Démarre MongoDB et configure automatiquement les utilisateurs
+# Démarrage complet
 docker-compose -f docker/docker-compose.yml up -d
 
-# Vérifie que tous les utilisateurs sont créés
-docker-compose -f docker/docker-compose.yml logs setup_auth
-```
-
-**Configuration manuelle :**
-```bash
-# Créer tous les utilisateurs et rôles
-python src/setup_auth.py
-
-# Tester les permissions de chaque rôle
-python src/auth_demo.py
-```
-
-### Utilisation des différents rôles
-
-**Pour la migration (recommandé) :**
-```bash
-# Utilise automatiquement migration_user
-docker-compose -f docker/docker-compose.yml up migration
-```
-
-**Pour les analyses en lecture seule :**
-```bash
-# Connexion en lecture seule
-docker exec -it healthcare_mongo mongosh -u readonly_user -p readonly_secure_2024 --authenticationDatabase healthcare_db
-
-# Dans MongoDB shell
-use healthcare_db
-db.patient_records.countDocuments({})
-```
-
-**Pour les applications cliniques :**
-```bash
-# Connexion limitée aux données patient
-docker exec -it healthcare_mongo mongosh -u healthcare_user -p healthcare_secure_2024 --authenticationDatabase healthcare_db
-
-# Requêtes cliniques autorisées
-db.patient_records.find({"age": {"$gte": "65"}})
-db.patient_records.countDocuments({"diagnosis": {"$regex": "diabetes", "$options": "i"}})
-```
-
-### Sécurité des mots de passe
-
-- **Hachage automatique** : MongoDB hache tous les mots de passe stockés
-- **Communications chiffrées** : Utilisation de connexions sécurisées
-- **Variables d'environnement** : Pas de mots de passe en dur dans le code
-- **Rotation recommandée** : Changer régulièrement en production
-
-### Test de sécurité
-
-**Vérifier les permissions :**
-```bash
-# Tester que readonly ne peut pas écrire
-docker exec -it healthcare_mongo mongosh -u readonly_user -p readonly_secure_2024 --authenticationDatabase healthcare_db --eval "
-  db.patient_records.insertOne({test: 'should_fail'});
-  // Devrait échouer avec unauthorized
-"
-
-# Tester que migration peut écrire
-docker exec -it healthcare_mongo mongosh -u migration_user -p migration_secure_2024 --authenticationDatabase healthcare_db --eval "
-  db.patient_records.insertOne({patient_id: 'TEST', diagnosis: 'Test migration'});
-  // Devrait réussir
-"
-```
-
-### Conformité RGPD/HIPAA
-
-- **Accès contrôlé** : Seuls les rôles autorisés peuvent accéder aux données
-- **Logs d'audit** : Traçabilité de tous les accès aux données médicales
-- **Chiffrement** : Protection des données en transit et au repos
-- **Rétention** : Durée de conservation définie pour les données sensibles
-
-## 🔑 Guide pratique d'authentification
-
-### Comment s'authentifier avec MongoDB
-
-#### 1. **Connexion avec l'utilisateur admin (configuration)**
-```bash
-# Connexion via Docker
-docker exec -it healthcare_mongo mongosh -u admin -p secure_password --authenticationDatabase admin
-
-# Dans MongoDB shell
-use healthcare_db
-db.patient_records.countDocuments({})
-```
-
-#### 2. **Connexion avec l'utilisateur migration (migration des données)**
-```bash
-# Connexion pour migration
-docker exec -it healthcare_mongo mongosh -u migration_user -p migration_secure_2024 --authenticationDatabase healthcare_db
-
-# Dans MongoDB shell
-use healthcare_db
-db.patient_records.insertMany([...])  // Écriture autorisée
-db.patient_records.find({...})         // Lecture autorisée
-```
-
-#### 3. **Connexion avec l'utilisateur readonly (analyses)**
-```bash
-# Connexion en lecture seule
-docker exec -it healthcare_mongo mongosh -u readonly_user -p readonly_secure_2024 --authenticationDatabase healthcare_db
-
-# Dans MongoDB shell
-use healthcare_db
-db.patient_records.find({...})         // Lecture autorisée
-db.patient_records.countDocuments({})  // Lecture autorisée
-// db.patient_records.insertOne({...}) // ÉCRITURE INTERDITE ❌
-```
-
-#### 4. **Connexion avec l'utilisateur healthcare (applications cliniques)**
-```bash
-# Connexion pour applications médicales
-docker exec -it healthcare_mongo mongosh -u healthcare_user -p healthcare_secure_2024 --authenticationDatabase healthcare_db
-
-# Dans MongoDB shell
-use healthcare_db
-db.patient_records.find({"age": {"$gte": 65}})  // Lecture autorisée
-db.patient_records.find({"diagnosis": {"$regex": "diabetes", "$options": "i"}})  // Lecture autorisée
-```
-
-### Comment changer de rôle utilisateur
-
-#### **Méthode 1 : Nouvelle connexion**
-```bash
-# Fermer la connexion actuelle (Ctrl+C ou exit)
-exit
-
-# Se reconnecter avec un autre utilisateur
-docker exec -it healthcare_mongo mongosh -u nouveau_user -p nouveau_password --authenticationDatabase healthcare_db
-```
-
-#### **Méthode 2 : Via les variables d'environnement**
-```bash
-# Définir les variables d'environnement
-export MONGO_USER="readonly_user"
-export MONGO_PASSWORD="readonly_secure_2024"
-export MONGO_AUTH_DB="healthcare_db"
-
-# Utiliser dans les scripts Python
-python src/migrate.py  # Utilise automatiquement readonly_user
-```
-
-#### **Méthode 3 : Configuration dans docker-compose**
-```yaml
-# Dans docker-compose.yml, changer les variables d'environnement
-environment:
-  - MONGO_USER=migration_user        # Change ici
-  - MONGO_PASSWORD=migration_secure_2024  # Change ici
-  - MONGO_AUTH_DB=healthcare_db
-```
-
-### Gestion des rôles et permissions
-
-#### **Vérifier les utilisateurs créés**
-```bash
-docker exec -it healthcare_mongo mongosh -u admin -p secure_password --authenticationDatabase admin --eval "
-  use healthcare_db
-  db.getUsers().users.forEach(u => {
-    print('👤 Utilisateur:', u.user)
-    print('   Rôles:', u.roles.map(r => r.role).join(', '))
-    print('')
-  })
-"
-```
-
-#### **Tester les permissions d'un utilisateur**
-```bash
-# Test de lecture (devrait réussir pour tous les rôles)
-docker exec -it healthcare_mongo mongosh -u readonly_user -p readonly_secure_2024 --authenticationDatabase healthcare_db --eval "
-  use healthcare_db
-  var count = db.patient_records.countDocuments({})
-  print('✅ Lecture OK -', count, 'documents')
-"
-
-# Test d'écriture (devrait échouer pour readonly et healthcare)
-docker exec -it healthcare_mongo mongosh -u readonly_user -p readonly_secure_2024 --authenticationDatabase healthcare_db --eval "
-  use healthcare_db
-  try {
-    db.patient_records.insertOne({test: 'permission_check'})
-    print('❌ ERREUR: Écriture autorisée!')
-  } catch(e) {
-    print('✅ Sécurité OK: Écriture bloquée')
-  }
-"
-```
-
-### Scénarios d'utilisation courants
-
-#### **Scénario 1 : Migration des données**
-```bash
-# 1. Démarrer l'environnement
-docker-compose -f docker/docker-compose.yml up -d
-
-# 2. Attendre que les utilisateurs soient créés
-sleep 30
-
-# 3. Se connecter en tant que migration_user
-docker exec -it healthcare_mongo mongosh -u migration_user -p migration_secure_2024 --authenticationDatabase healthcare_db
-
-# 4. Effectuer la migration
-use healthcare_db
-// Les données CSV sont automatiquement migrées par le service Docker
-```
-
-#### **Scénario 2 : Analyse des données**
-```bash
-# 1. Se connecter en readonly
-docker exec -it healthcare_mongo mongosh -u readonly_user -p readonly_secure_2024 --authenticationDatabase healthcare_db
-
-# 2. Effectuer des analyses
-use healthcare_db
-db.patient_records.find({"age": {"$gte": 65}}).count()
-db.patient_records.aggregate([
-  {$group: {_id: "$medical_data.diagnosis", count: {$sum: 1}}},
-  {$sort: {count: -1}},
-  {$limit: 10}
-])
-```
-
-#### **Scénario 3 : Application clinique**
-```bash
-# 1. Se connecter en healthcare
-docker exec -it healthcare_mongo mongosh -u healthcare_user -p healthcare_secure_2024 --authenticationDatabase healthcare_db
-
-# 2. Requêtes cliniques courantes
-use healthcare_db
-db.patient_records.find({"patient_info.age": {"$gte": 65}})
-db.patient_records.find({"medical_data.diagnosis": {"$regex": "hypertension", "$options": "i"}})
-```
-
-### Sécurité et bonnes pratiques
-
-#### **Mots de passe sécurisés**
-- **Admin** : `secure_password` (à changer en production)
-- **Migration** : `migration_secure_2024`
-- **ReadOnly** : `readonly_secure_2024`
-- **Healthcare** : `healthcare_secure_2024`
-
-#### **Principe de moindre privilège**
-- **Toujours utiliser l'utilisateur** avec les permissions minimales nécessaires
-- **Admin** : Réservé à la configuration système
-- **Migration** : Seulement pendant les opérations de migration
-- **ReadOnly/Healthcare** : Pour les analyses et applications normales
-
-#### **Audit et monitoring**
-```bash
-# Vérifier les connexions actives
-docker exec -it healthcare_mongo mongosh -u admin -p secure_password --authenticationDatabase admin --eval "
-  db.serverStatus().connections
-"
-
-# Consulter les logs d'authentification
-docker logs healthcare_mongo | grep -i auth
-```
-
-## Commandes Docker
-
-**Gestion de l'environnement :**
-```bash
-# Démarrer tous les services (MongoDB + Migration)
-docker-compose -f docker/docker-compose.yml up -d
-
-# Vérifier l'état des services
+# Vérification des services
 docker-compose -f docker/docker-compose.yml ps
 
-# Voir les logs de migration
+# Consultation des logs
 docker-compose -f docker/docker-compose.yml logs migration
 
-# Arrêter tous les services
-docker-compose -f docker/docker-compose.yml down
-
-# Nettoyer (supprimer les volumes)
+# Arrêt et nettoyage
 docker-compose -f docker/docker-compose.yml down -v
 ```
 
-**Vérification de la migration :**
-```bash
-# Compter les documents dans MongoDB
-docker exec -it healthcare_mongo mongosh -u admin -p secure_password --authenticationDatabase admin --eval "db.getSiblingDB('healthcare_db').patient_records.countDocuments({})"
-
-# Voir un échantillon de données
-docker exec -it healthcare_mongo mongosh -u admin -p secure_password --authenticationDatabase admin --eval "db.getSiblingDB('healthcare_db').patient_records.findOne()"
-```
-
-## État du projet
-
-### ✅ **Étape 1 - Migration vers MongoDB** (TERMINÉE)
-- Script de migration fonctionnel (55 500 enregistrements)
-- Opérations CRUD démontrées
-- Tests d'intégrité automatisés (13/13 tests passent)
-
-### ✅ **Étape 2 - Conteneurisation Docker** (TERMINÉE)
-- Docker Compose opérationnel (MongoDB + Migration)
-- Migration automatisée au démarrage
-- Tests automatisés avec pytest
-
-### 🔄 **Prochaines étapes**
-- **Étape 3** : Recherche AWS (analyse comparative)
-- **Étape 4** : Support de présentation (slides soutenance)
-
 ## Dépendances
 
-**requirements.txt :**
 ```
-pymongo==4.7.2
-pandas==2.2.2
-pytest==8.2.2
-pytest-html==4.1.1
+pymongo==4.7.2      # Driver MongoDB Python
+pandas==2.2.2       # Traitement des données CSV
+pytest==8.2.2       # Framework de tests
+pytest-html==4.1.1  # Rapports de tests HTML
 ```
