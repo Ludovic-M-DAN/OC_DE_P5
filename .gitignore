@@ -4,6 +4,15 @@ cours_openclassroom_&_sources_externes/
 .cursor/
 CHECKLIST_PROJET_OC_P5.md
 aws_research.md
+Migration et sécurisation des enregistrements médicaux.pptm
+Presentation.pptx
+
+# Fichiers d'authentification (pas dans les attendus stricts du projet)
+src/auth_demo.py
+src/setup_auth.py
+docs/presentation_auth_slides.md
+docs/mentor_criteria_validation.md
+docs/database-schema.md
 
 # Fichiers temporaires et caches
 *.txt

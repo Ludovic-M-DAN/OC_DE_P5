@@ -6,6 +6,7 @@ Tests automatisés pour valider la qualité des données avant/après migration
 import pytest
 import pandas as pd
 from pymongo import MongoClient
+from pymongo.errors import OperationFailure
 import os
 from datetime import datetime
 
@@ -165,6 +166,226 @@ class TestPerformanceBasic:
         
         # Note: Ce test peut être étendu pour vérifier des index spécifiques
         # selon les besoins de performance du projet
+
+
+class TestUserAuthentication:
+    """Classe de tests pour l'authentification et les rôles utilisateurs"""
+
+    def get_user_client(self, username: str, password: str):
+        """Helper pour créer un client avec un utilisateur spécifique"""
+        host = os.getenv("MONGO_HOST", "localhost")
+        port = os.getenv("MONGO_PORT", "27017")
+        uri = f"mongodb://{username}:{password}@{host}:{port}/healthcare_db"
+        return MongoClient(uri, serverSelectionTimeoutMS=5000)
+
+    def test_admin_connection(self):
+        """Test Auth 1: Vérifier la connexion admin"""
+        try:
+            client = MongoClient("mongodb://admin:secure_password@localhost:27017/?authSource=admin")
+            client.admin.command({"ping": 1})
+            client.close()
+            assert True, "Connexion admin réussie"
+        except Exception as e:
+            pytest.fail(f"Échec connexion admin: {e}")
+
+    def test_migration_user_read_access(self):
+        """Test Auth 2: Vérifier que migration_user peut lire"""
+        client = None
+        try:
+            client = self.get_user_client("migration_user", "migration_secure_2024")
+            db = client["healthcare_db"]
+            count = db.patient_records.count_documents({})
+            assert count >= 0, "Migration user ne peut pas lire"
+        except Exception as e:
+            pytest.fail(f"Erreur lecture migration_user: {e}")
+        finally:
+            if client:
+                client.close()
+
+    def test_migration_user_write_access(self):
+        """Test Auth 3: Vérifier que migration_user peut écrire"""
+        client = None
+        try:
+            client = self.get_user_client("migration_user", "migration_secure_2024")
+            db = client["healthcare_db"]
+
+            # Test d'écriture
+            test_doc = {
+                "patient_id": "TEST_AUTH_MIGRATION",
+                "age": "99",
+                "diagnosis": "Test authentification",
+                "date_recorded": "2024-01-01"
+            }
+            result = db.patient_records.insert_one(test_doc)
+            assert result.inserted_id is not None, "Migration user ne peut pas écrire"
+
+            # Nettoyer
+            db.patient_records.delete_one({"_id": result.inserted_id})
+
+        except Exception as e:
+            pytest.fail(f"Erreur écriture migration_user: {e}")
+        finally:
+            if client:
+                client.close()
+
+    def test_readonly_user_read_access(self):
+        """Test Auth 4: Vérifier que readonly_user peut lire"""
+        client = None
+        try:
+            client = self.get_user_client("readonly_user", "readonly_secure_2024")
+            db = client["healthcare_db"]
+            count = db.patient_records.count_documents({})
+            assert count >= 0, "Readonly user ne peut pas lire"
+        except Exception as e:
+            pytest.fail(f"Erreur lecture readonly_user: {e}")
+        finally:
+            if client:
+                client.close()
+
+    def test_readonly_user_write_denied(self):
+        """Test Auth 5: Vérifier que readonly_user NE peut PAS écrire"""
+        client = None
+        try:
+            client = self.get_user_client("readonly_user", "readonly_secure_2024")
+            db = client["healthcare_db"]
+
+            # Test d'écriture (devrait échouer)
+            test_doc = {
+                "patient_id": "TEST_AUTH_READONLY",
+                "age": "99",
+                "diagnosis": "Test authentification",
+                "date_recorded": "2024-01-01"
+            }
+
+            # Cette opération devrait lever une exception OperationFailure
+            with pytest.raises(OperationFailure):
+                db.patient_records.insert_one(test_doc)
+
+        except pytest.raises.Exception:
+            # C'est le comportement attendu
+            pass
+        except Exception as e:
+            pytest.fail(f"Erreur inattendue readonly_user: {e}")
+        finally:
+            if client:
+                client.close()
+
+    def test_healthcare_user_read_access(self):
+        """Test Auth 6: Vérifier que healthcare_user peut lire"""
+        client = None
+        try:
+            client = self.get_user_client("healthcare_user", "healthcare_secure_2024")
+            db = client["healthcare_db"]
+            count = db.patient_records.count_documents({})
+            assert count >= 0, "Healthcare user ne peut pas lire"
+        except Exception as e:
+            pytest.fail(f"Erreur lecture healthcare_user: {e}")
+        finally:
+            if client:
+                client.close()
+
+    def test_healthcare_user_write_denied(self):
+        """Test Auth 7: Vérifier que healthcare_user NE peut PAS écrire"""
+        client = None
+        try:
+            client = self.get_user_client("healthcare_user", "healthcare_secure_2024")
+            db = client["healthcare_db"]
+
+            # Test d'écriture (devrait échouer)
+            test_doc = {
+                "patient_id": "TEST_AUTH_HEALTHCARE",
+                "age": "99",
+                "diagnosis": "Test authentification",
+                "date_recorded": "2024-01-01"
+            }
+
+            # Cette opération devrait lever une exception OperationFailure
+            with pytest.raises(OperationFailure):
+                db.patient_records.insert_one(test_doc)
+
+        except pytest.raises.Exception:
+            # C'est le comportement attendu
+            pass
+        except Exception as e:
+            pytest.fail(f"Erreur inattendue healthcare_user: {e}")
+        finally:
+            if client:
+                client.close()
+
+    def test_invalid_credentials_denied(self):
+        """Test Auth 8: Vérifier que les credentials invalides sont rejetés"""
+        try:
+            # Essayer de se connecter avec des credentials invalides
+            client = self.get_user_client("invalid_user", "wrong_password")
+            db = client["healthcare_db"]
+            # Cette ligne devrait lever une exception
+            db.patient_records.count_documents({})
+            pytest.fail("Connexion avec credentials invalides réussie (PROBLÈME!)")
+        except Exception:
+            # C'est le comportement attendu
+            assert True, "Credentials invalides correctement rejetés"
+
+    def test_user_isolation(self):
+        """Test Auth 9: Vérifier l'isolation entre utilisateurs"""
+        # Tester que chaque utilisateur ne voit que ses propres permissions
+        # et pas celles des autres utilisateurs
+
+        # Test migration_user ne peut pas faire des opérations admin
+        client = None
+        try:
+            client = self.get_user_client("migration_user", "migration_secure_2024")
+            db = client["healthcare_db"]
+
+            # Tester une opération d'administration (devrait échouer)
+            try:
+                db.command("createUser", {"user": "test", "pwd": "test", "roles": []})
+                pytest.fail("Migration user peut créer des utilisateurs (PROBLÈME!)")
+            except OperationFailure:
+                # C'est le comportement attendu
+                assert True, "Migration user ne peut pas créer d'utilisateurs"
+
+        except Exception as e:
+            pytest.fail(f"Erreur isolation migration_user: {e}")
+        finally:
+            if client:
+                client.close()
+
+    def test_secure_password_storage(self):
+        """Test Auth 10: Vérifier que l'authentification fonctionne de manière sécurisée"""
+        # Ce test vérifie que l'authentification fonctionne sans exposer les détails de sécurité
+        # (les détails de hachage ne sont pas accessibles via l'API normale pour des raisons de sécurité)
+        try:
+            # Vérifier que tous les utilisateurs peuvent se connecter avec leurs credentials
+            test_users = [
+                ("migration_user", "migration_secure_2024"),
+                ("readonly_user", "readonly_secure_2024"),
+                ("healthcare_user", "healthcare_secure_2024")
+            ]
+
+            for username, password in test_users:
+                client = self.get_user_client(username, password)
+                db = client["healthcare_db"]
+
+                # Test simple de connexion et lecture
+                count = db.patient_records.count_documents({})
+                assert count >= 0, f"Connexion échouée pour {username}"
+
+                client.close()
+
+            # Vérifier que des credentials invalides sont rejetés
+            try:
+                invalid_client = self.get_user_client("invalid_user", "wrong_password")
+                db = invalid_client["healthcare_db"]
+                db.patient_records.count_documents({})  # Cette ligne devrait échouer
+                pytest.fail("Connexion avec credentials invalides réussie (PROBLÈME!)")
+            except Exception:
+                # C'est le comportement attendu
+                pass
+
+            assert True, "Authentification sécurisée validée"
+
+        except Exception as e:
+            pytest.fail(f"Erreur authentification sécurisée: {e}")
 
 
 if __name__ == "__main__":

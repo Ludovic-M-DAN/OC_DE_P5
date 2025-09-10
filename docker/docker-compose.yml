@@ -19,11 +19,11 @@ services:
       timeout: 5s
       retries: 5
 
-  migration:
+  setup_auth:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    container_name: healthcare_migration
+    container_name: healthcare_setup_auth
     depends_on:
       mongo:
         condition: service_healthy
@@ -32,7 +32,27 @@ services:
       - MONGO_USER=admin
       - MONGO_PASSWORD=secure_password
     volumes:
+      - ../src:/app/src:ro
+    networks:
+      - healthcare_net
+    command: ["python", "src/setup_auth.py"]
+
+  migration:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: healthcare_migration
+    depends_on:
+      setup_auth:
+        condition: service_completed_successfully
+    environment:
+      - MONGO_HOST=mongo
+      - MONGO_USER=migration_user
+      - MONGO_PASSWORD=migration_secure_2024
+      - MONGO_AUTH_DB=healthcare_db
+    volumes:
       - ../data:/data:ro
+      - ../src:/app/src:ro
     networks:
       - healthcare_net
 
